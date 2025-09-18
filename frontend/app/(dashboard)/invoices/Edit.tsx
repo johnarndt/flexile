@@ -5,9 +5,9 @@ import { PaperClipIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { type DateValue, parseDate } from "@internationalized/date";
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 import { List } from "immutable";
-import { CircleAlert } from "lucide-react";
+import { CircleAlert, Info } from "lucide-react";
 import Link from "next/link";
-import { redirect, useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import React, { useRef, useState } from "react";
 import { z } from "zod";
 import ComboBox from "@/components/ComboBox";
@@ -15,7 +15,7 @@ import { DashboardHeader } from "@/components/DashboardHeader";
 import DatePicker from "@/components/DatePicker";
 import { linkClasses } from "@/components/Link";
 import NumberInput from "@/components/NumberInput";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -95,8 +95,7 @@ type InvoiceFormExpense = Data["invoice"]["expenses"][number] & { errors?: strin
 const Edit = () => {
   const user = useCurrentUser();
   const company = useCurrentCompany();
-  const { canSubmitInvoices } = useCanSubmitInvoices();
-  if (!canSubmitInvoices) throw redirect("/invoices");
+  const { canSubmitInvoices, hasLegalDetails, unsignedContractId } = useCanSubmitInvoices();
   const { id } = useParams<{ id: string }>();
   const searchParams = useSearchParams();
   const [errorField, setErrorField] = useState<string | null>(null);
@@ -275,13 +274,56 @@ const Edit = () => {
               size="small"
               variant="primary"
               onClick={() => validate() && submit.mutate()}
-              disabled={submit.isPending}
+              disabled={submit.isPending || !canSubmitInvoices}
             >
               {submit.isPending ? "Sending..." : data.invoice.id ? "Resubmit" : "Send invoice"}
             </Button>
           </>
         }
       />
+
+      {!hasLegalDetails ? (
+        <Alert className="mx-4">
+          <Info className="size-4" />
+          <AlertDescription>
+            Please{" "}
+            <Link className={linkClasses} href="/settings/tax">
+              provide your legal details
+            </Link>{" "}
+            before creating new invoices.
+          </AlertDescription>
+        </Alert>
+      ) : null}
+
+      {unsignedContractId ? (
+        <Alert className="mx-4">
+          <Info className="size-4" />
+          <AlertTitle>You have an unsigned contract.</AlertTitle>
+          <AlertDescription>
+            Please{" "}
+            <Link
+              className={linkClasses}
+              href={`/documents?${new URLSearchParams({ sign: unsignedContractId.toString(), next: "/invoices" })}`}
+            >
+              sign it
+            </Link>{" "}
+            before creating new invoices.
+          </AlertDescription>
+        </Alert>
+      ) : null}
+
+      {!user.hasPayoutMethodForInvoices ? (
+        <Alert className="mx-4">
+          <Info className="size-4" />
+          <AlertDescription>
+            Please{" "}
+            <Link className={linkClasses} href="/settings/payouts">
+              provide a payout method
+            </Link>{" "}
+            for your invoices.
+          </AlertDescription>
+        </Alert>
+      ) : null}
 
       {payRateInSubunits && lineItems.some((lineItem) => lineItem.pay_rate_in_subunits > payRateInSubunits) ? (
         <Alert className="mx-4" variant="warning">
