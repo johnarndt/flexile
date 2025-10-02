@@ -47,6 +47,9 @@ export const createContext = cache(async ({ req }: FetchCreateContextFnOptions) 
   // Get userId from NextAuth JWT session
   const session = await getServerSession(authOptions);
   if (session?.user) {
+    // Add JWT token for Rails backend authentication
+    headers["x-flexile-auth"] = `Bearer ${session.user.jwt}`;
+    
     // Extract user ID from JWT token
     try {
       const jwt = session.user.jwt;
