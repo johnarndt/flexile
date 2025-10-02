@@ -3,7 +3,6 @@
   "buildCommand": "pnpm run vercel:build",
   "installCommand": "pnpm install --frozen-lockfile",
   "framework": "nextjs",
-  "outputDirectory": "frontend/.next",
   "git": {
     "deploymentEnabled": {
       "main": true,
