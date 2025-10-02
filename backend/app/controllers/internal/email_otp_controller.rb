@@ -13,7 +13,7 @@ class Internal::EmailOtpController < Internal::BaseController
 
     return unless check_otp_rate_limit(user)
 
-    UserMailer.otp_code(user.id).deliver_later
+    UserMailer.otp_code(user.id).deliver_now
 
     render json: { message: "OTP sent successfully" }, status: :ok
   end
